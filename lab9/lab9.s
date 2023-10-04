@@ -63,6 +63,7 @@ node_iterator_found:
     addi t0, x0, 10
     sb t0, 7(s5)    #\n on last char
 
+
     addi t1, x0, 10 #10 used for remainder and division
 
     remu t2, s3, t1 #t2 = s3%10
