@@ -21,14 +21,14 @@ s3: constant for the iteration
 input_file: .asciz "image.pgm"
 .bss
 buffer: .skip 10
-file_header: .skip 12
+file_header: .skip 13
+buffer_printavel: .skip 11
 .text
 .globl _start
 _start:
     la s0, buffer
     la a0, input_file
     jal open_image  #a0 = file descriptor
-    d_guarda_fd:
     mv s1, a0       #s1 = file descriptor
 
     li a0, 10
@@ -41,13 +41,24 @@ _start:
 
     li s2, 0    #counts the written pixels
     li s3, 100
-/*repeat 10 times*/
 line_iterator:
     mv a0, s1   
     la a1, buffer
     li a2, 10
     jal read
-    jal check_memory
+
+pos_read:
+    lb t0, 0(s0)
+    lb t0, 1(s0)
+    lb t0, 2(s0)
+    lb t0, 3(s0)
+    lb t0, 4(s0)
+    lb t0, 5(s0)
+    lb t0, 6(s0)
+    lb t0, 7(s0)
+    lb t0, 8(s0)
+    lb t0, 9(s0)
+
     jal set_line
     addi s2, s2, 10
     bltu s2, s3, line_iterator #while s2<100 repeat 
@@ -58,13 +69,14 @@ set_line:   #this label will write a complete line
     li t0, 10
     divu a1, s2, t0 #a1 = s2/t0 = s2/10 = height
 
-    sb t0, 0(s0)
+
+    lbu t0, 0(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  #color bytes now written
-    or a2, t0, 255  #alpha corrected
+    ori a2, t0, 0xff  #alpha corrected
     li a0, 0
 
     addi sp, sp, -4
@@ -75,13 +87,13 @@ set_line:   #this label will write a complete line
 
     #-------
 
-    sb t0, 1(s0)
+    lbu t0, 1(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 1    #x coordinate
 
     addi sp, sp, -4
@@ -92,13 +104,13 @@ set_line:   #this label will write a complete line
     
     #--------
 
-    sb t0, 2(s0)
+    lbu t0, 2(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 2    #x coordinate
 
     addi sp, sp, -4
@@ -109,13 +121,13 @@ set_line:   #this label will write a complete line
     
     #--------
 
-    sb t0, 3(s0)
+    lbu t0, 3(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 3    #x coordinate
     
     addi sp, sp, -4
@@ -126,13 +138,13 @@ set_line:   #this label will write a complete line
 
     #-------
     
-    sb t0, 4(s0)
+    lbu t0, 4(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 4    #x coordinate
     
     addi sp, sp, -4
@@ -143,13 +155,13 @@ set_line:   #this label will write a complete line
 
     #-------
     
-    sb t0, 5(s0)
+    lbu t0, 5(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 5    #x coordinate
     
     addi sp, sp, -4
@@ -160,13 +172,13 @@ set_line:   #this label will write a complete line
 
     #--------
     
-    sb t0, 6(s0)
+    lbu t0, 6(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 6    #x coordinate
     
     addi sp, sp, -4
@@ -177,13 +189,13 @@ set_line:   #this label will write a complete line
 
     #---------
     
-    sb t0, 7(s0)
+    lbu t0, 7(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 7    #x coordinate
     
     addi sp, sp, -4
@@ -194,13 +206,13 @@ set_line:   #this label will write a complete line
 
     #--------
     
-    sb t0, 8(s0)
+    lbu t0, 8(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 8    #x coordinate
     
     addi sp, sp, -4
@@ -211,13 +223,13 @@ set_line:   #this label will write a complete line
 
     #--------
     
-    sb t0, 9(s0)
+    lbu t0, 9(s0)
     slli t1, t0, 8
     slli t2, t0, 16
     slli t3, t0, 24
     add t0, t1, t2
     add t0, t0, t3  
-    or a2, t0, 255  
+    ori a2, t0, 255  
     li a0, 9    #x coordinate
     
     addi sp, sp, -4
@@ -231,7 +243,7 @@ set_line:   #this label will write a complete line
 
 skip_header:
     la a1, file_header
-    li a2, 12
+    li a2, 13
     li a7, 63 # syscall read (63)
     ecall
     jalr x0, ra, 0
@@ -262,20 +274,6 @@ open_image: #(a0=adress for file)
     li a2, 0             # mode
     li a7, 1024          # syscall open 
     ecall
-    jalr x0, ra, 0
-
-check_memory:
-    sb t0, 0(s0)
-    sb t0, 1(s0)
-    sb t0, 2(s0)
-    sb t0, 3(s0)
-    sb t0, 4(s0)
-    sb t0, 5(s0)
-    sb t0, 6(s0)
-    sb t0, 7(s0)
-    sb t0, 8(s0)
-    sb t0, 9(s0)
-
     jalr x0, ra, 0
 
 exit:
