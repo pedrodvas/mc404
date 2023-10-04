@@ -93,7 +93,7 @@ loop_negative_value:
     add a1, a1, t4
     addi t2, t2, 1
     jal x0, loop_negative_value
-    
+    #aparentemente o primeiro digito que t4 pega é o -
 
 
 out:
