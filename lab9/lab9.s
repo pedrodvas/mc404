@@ -2,8 +2,9 @@
 REGISTERS:
 - s1 = address for current point
 - s2 = input_address
-
-
+- s3 = how many nodes
+- s4 = value of the input
+- s5 = output for value found
 PLAN:
 -receive the 6 char input
 -there will be two functions, one for >=0 and other for <0
@@ -22,16 +23,111 @@ PLAN:
 */
 
 .data
-input_address: .asciz "-1234\n"
+#input_address: .asciz "-64\n"
+output_not_found: .asciz "-1\n"
 .bss
-#input_address: .skip 6
+output_number_nodes: .skip 8
+input_address: .skip 6
+
 .text
 .globl _start
 _start:
-    #jal read
+    jal read
     la s2, input_address
     jal convert_to_value
+    #a1 is the value we're looking for
+    mv s4, a1   #now it is s4
+    la s1, head_node
+    add s3, x0, x0  #counts number of nodes
+    jal node_iterator
     jal exit
+
+node_iterator:
+    lw t0, 0(s1)
+    lw t1, 4(s1)
+
+    add t0, t0, t1
+    beq t0, s4, node_iterator_found
+
+    lw s1, 8(s1)    #address for next node
+    beq s1, x0, node_iterator_not_exist
+    /*if arrived on null pointer stops execution*/
+
+    addi s3, s3, 1  #counts one node
+    jal x0, node_iterator
+
+node_iterator_found:
+#write number of nodes read
+    la s5, output_number_nodes
+
+    addi t0, x0, 10
+    sb t0, 7(s5)    #\n on last char
+
+    addi t1, x0, 10 #10 used for remainder and division
+
+    remu t2, s3, t1 #t2 = s3%10
+    addi t2, t2, 48
+    sb t2, 6(s5)
+    divu s3, s3, t1 #s3 = s3/10
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 5(s5)
+    divu s3, s3, t1
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 4(s5)
+    divu s3, s3, t1
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 4(s5)
+    divu s3, s3, t1
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 3(s5)
+    divu s3, s3, t1
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 2(s5)
+    divu s3, s3, t1
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 1(s5)
+    divu s3, s3, t1
+
+    beq s3, x0, write_nodes
+    remu t2, s3, t1
+    addi t2, t2, 48
+    sb t2, 0(s5)
+
+
+write_nodes:
+    li a0, 1            # file descriptor = 1 (stdout)
+    la a1, output_number_nodes       # buffer
+    li a2, 8           # size
+    li a7, 64           # syscall write (64)
+    ecall
+    jalr x0, ra, 0
+
+node_iterator_not_exist:
+#writes -1
+    li a0, 1            # file descriptor = 1 (stdout)
+    la a1, output_not_found       # buffer
+    li a2, 3           # size
+    li a7, 64           # syscall write (64)
+    ecall
+    jalr x0, ra, 0      #goes to main
 
 read:
     li a0, 0  # file descriptor = 0 (stdin)
@@ -63,7 +159,6 @@ digit_counter_end:
     beq t0, t1, negative    #jumps to negative if first char is -
 
 #a1 will be the value for the return
-    
 positive:
     add a1, x0, x0
     addi t2, s2, 0       #initial memory position
@@ -82,12 +177,13 @@ negative:
     add a1, x0, x0
     addi t2, s2, 1  #initial memory position (after '-')
     add t0, t2, a0  #position of /n
+    addi t0, t0, -1
     addi t5, x0, 10 #used to multiply the result
     addi t3, x0, -1
 loop_negative_value:
     beq t0, t2, out #when /n breaks
     mul a1, a1, t5  #power correction
-    lb t4, 0(s2)
+    lb t4, 0(t2)
     addi t4, t4, -48#ascii correction
     mul t4, t4, t3  #turns into negative
     add a1, a1, t4
@@ -101,3 +197,5 @@ out:
 
 
 exit:
+    addi a7, x0, 93
+    ecall
