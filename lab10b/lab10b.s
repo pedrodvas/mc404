@@ -34,7 +34,7 @@ recursive_tree_search:
 
         addi sp, sp, -4
         sw a0, 0(sp)
-        addi a0, a0, 8  #a0 = a0->left
+        addi a0, a0, 8  #a0 = a0->right
         addi sp, sp, -4
         sw ra, 0(sp)
         addi a3, a3, 1  #changes the height of the tree
