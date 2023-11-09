@@ -57,11 +57,13 @@ gets:   #when this function is called it will store
         la t2, buffer_gets
         lb t1, 0(t2)    #loads the stored byte
         
-        beq t1, 10, ignore_enter
+        addi t3, x0, 10
+        beq t1, t3, ignore_enter
 
-        sb t1, t0   #stores the char t1 on adress t0
+        sb t1, 0(t0)   #stores the char t1 on adress t0
         addi t0, t0, 1  #moves the memory position
-        bne t1, 10, loop_read
+        addi t3, x0, 10
+        bne t1, t3, loop_read
 
     ignore_enter:
         addi t0, t0, 1
@@ -78,15 +80,18 @@ atoi:
     addi t2, x0, 45 #ascii for '-'
     add t0, x0, x0  #used for the value
 
-    1:  #goes until it finds the specified chars
-        #this part is incomplete
-        lb t0, a0
-        addi a0, a0, 1
-        beq t0, t1, 2f
-        beq t0, t2, 3f
+    
+    lb t0, a0
+    addi a0, a0, 1
+    beq t0, t2, 3f  #negative branch
+    beq t0, t1, 1f
+    beq x0, x0, 2f
+
+    1:
+        addi a0, a0, 1  #skips the '+'
 
     2:  #finds a + or a digit
-        addi a1, x0, -1 #used to define the output sign
+        addi a1, x0, 1 #used to define the output sign
 
         lb t2, 0(a0)    #loads char
 
@@ -220,27 +225,100 @@ itoa:
             sub a0, a0, t2
 
             sb x0, 0(a1) #terminates with null
+    
+    mv a0, a3   #return the string pointer
+    jalr x0, ra, 0
+
 
     hexadecimal:
         addi t0, x0, 1
         slli t0, t0, 12 #4096=0x1000 
 
+        remu t1, a0, t0
+        sub t2, a0, t1
+        div t3, t2, t0
+        #t3 has digit
+        addi t4, x0, 10
+        blt t3, t4, 1f
+        bge t3, t4, 2f
 
-write:
-    li a0, 1            # file descriptor = 1 (stdout)
-    la a1, buffer do write       # buffer
-    li a2, 2           # size
-    li a7, 64           # syscall write (64)
-    ecall
+        1: #for d<10
+        addi t5, t3, 48
+        beq x0, x0, 3f
+
+        2: #for d>10
+        addi t5, t3, 87
+        beq x0, x0, 3f
+
+        3:
+        sb t5, 0(a1)
+        addi a1, a1, 1
+
+
+        srai t0, t0, 4
+
+        remu t1, a0, t0
+        sub t2, a0, t1
+        div t3, t2, t0
+        addi t4, x0, 10
+        blt t3, t4, 1f
+        bge t3, t4, 2f
+
+        1: #for d<10
+        addi t5, t3, 48
+        beq x0, x0, 3f
+        2: #for d>10
+        addi t5, t3, 87
+        beq x0, x0, 3f
+
+        3:
+        sb t5, 0(a1)
+        addi a1, a1, 1
+
+
+        srai t0, t0, 4
+
+        remu t1, a0, t0
+        sub t2, a0, t1
+        div t3, t2, t0
+        addi t4, x0, 10
+        blt t3, t4, 1f
+        bge t3, t4, 2f
+
+        1: #for d<10
+        addi t5, t3, 48
+        beq x0, x0, 3f
+        2: #for d>10
+        addi t5, t3, 87
+        beq x0, x0, 3f
+
+        3:
+        sb t5, 0(a1)
+        addi a1, a1, 1
+
+        srai t0, t0, 4
+
+        remu t1, a0, t0
+        sub t2, a0, t1
+        div t3, t2, t0
+        addi t4, x0, 10
+        blt t3, t4, 1f
+        bge t3, t4, 2f
+
+        1: #for d<10
+        addi t5, t3, 48
+        beq x0, x0, 3f
+        2: #for d>10
+        addi t5, t3, 87
+        beq x0, x0, 3f
+
+        3:
+        sb t5, 0(a1)
+        addi a1, a1, 1
+
+    mv a0, a3   #return the string pointer
     jalr x0, ra, 0
 
-read:
-    li a0, 0  # file descriptor = 0 (stdin)
-    la a1, buffer do read #  buffer to write the data
-    li a2, 20  # size in bytes
-    li a7, 63 # syscall read (63)
-    ecall
-    jalr x0, ra, 0
 
 exit:
     addi a7, x0, 93
