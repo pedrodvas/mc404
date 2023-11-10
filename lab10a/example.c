@@ -50,7 +50,21 @@ void run_operation(int op){
 }
 
 void _start(){
-    int operation = atoi(gets(buffer));
-    run_operation(operation);
+    
+    //int operation = atoi(gets(buffer));
+
+   buffer[0] = '3';
+   buffer[1] = '2';
+   buffer[2] = '1';
+   buffer[4] = 0;
+   char debug_buffer[4];
+   itoa(atoi(buffer), debug_buffer, 10);
+
+    puts(debug_buffer);
+
+    //int operation = atoi(buffer);
+
+    //run_operation(operation);
     exit(0);
+   
 }

@@ -41,10 +41,10 @@ puts:   #when this function is called a0 has the adress
         #of the string to be printed
     mv t6, a0
     loop_chari: #will iterate until it finds a \0
-        lbu t0, 0(t6)
-        beq t0, x0, string_ends
-        sb t0, 0(t6)
-        addi t6, t6, 1
+        lbu t0, 0(t6)   #loads first char in t0
+        beq t0, x0, string_ends #if t0=0 -> string ended
+        la t5, buffer_puts
+        sb t0, 0(t5)    #otherwise saves char to be printed
         #command to print
         li a0, 1
         la a1, buffer_puts
@@ -52,10 +52,11 @@ puts:   #when this function is called a0 has the adress
         li a7, 64
         ecall
         #end of print
+        addi t6, t6, 1
         bne t0, x0, loop_chari
     string_ends:
         li t0, 10
-        sb t0, 0(t6)
+        sb t0, 0(t5)
         #will now print the \n
         li a0, 1
         la a1, buffer_puts
@@ -77,14 +78,14 @@ gets:   #when this function is called it will store
         li a0, 0
         la a1, buffer_gets
         li a2, 1
-        li a7, 64
-        ecall
+        li a7, 63
+        ecall   #stores the read byte on memory
 
         la t2, buffer_gets
         lb t1, 0(t2)    #loads the stored byte
         
-        addi t3, x0, 10
-        beq t1, t3, ignore_enter
+        addi t3, x0, 10 #t3='\n'
+        beq t1, t3, ignore_enter#if char='\n' ends string
 
         sb t1, 0(t0)   #stores the char t1 on adress t0
         addi t0, t0, 1  #moves the memory position
@@ -92,7 +93,6 @@ gets:   #when this function is called it will store
         bne t1, t3, loop_read
 
     ignore_enter:
-        addi t0, t0, 1
         li t1, 0
         sb t1, 0(t0)
 
@@ -104,11 +104,11 @@ atoi:
     #a0 has the address
     addi t1, x0, 43 #ascii for '+'
     addi t2, x0, 45 #ascii for '-'
+    addi t3, x0, 0
     add t0, x0, x0  #used for the value
 
     
-    lb t0, a0
-    addi a0, a0, 1
+    lb t0, 0(a0)
     beq t0, t2, 3f  #negative branch
     beq t0, t1, 1f
     beq x0, x0, 2f
@@ -172,6 +172,8 @@ atoi:
     5:  #end of the function
         mul t3, t3, a1  #abs value * signal
         mv a0, t3
+    
+    fim:
     jalr x0, ra, 0
     
 .globl itoa
@@ -181,6 +183,9 @@ itoa:
     #a2 = base
 
     mv a3, a1
+
+    add a4, x0, 0   #if printing has begun
+
 
     addi t0, x0, 10
     beq a2, t0, decimal
@@ -209,9 +214,14 @@ itoa:
             div t3, t2, t0
             #t3 has digit*1
 
+            beq t3, x0, 1f
+
+            addi a4, a4, 1
             addi t4, t3, 48
             sb t4, 0(a1)
             addi a1, a1, 1
+
+            1:
             sub a0, a0, t2
 
 
@@ -221,9 +231,14 @@ itoa:
             sub t2, a0, t1
             div t3, t2, t0
 
+            bnez a4, 2f #if printing begun
+            beqz t3, 3f
+            2:
+
             addi t4, t3, 48
             sb t4, 0(a1)
             addi a1, a1, 1
+            3:
             sub a0, a0, t2
 
 
