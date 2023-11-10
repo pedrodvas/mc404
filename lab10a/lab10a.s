@@ -6,13 +6,37 @@
 buffer_puts: .skip 1
 buffer_gets: .skip 1
 .text
-.globl _start
-_start:
+
+a0:
+
+.globl linked_list_search
+linked_list_search:
+    #returns node index if value is found
+
+    #a0 = first node
+    #a1 = value to be searched
+
+    addi a2, x0, -1 #so the first node will be 0
+
+    loop:
+        addi a2, a2, 1  #index increased
+        lw t0, 0(a0)
+        lw t1, 4(a0)
+        add t2, t1, t0
+        beq t2, a1, found
+        lw a0, 8(a0)    #next node loaded
+        beq a0, x0, null #ends function if no next node
+        beq x0, x0, loop #repeats the process otherwise
+
+    found:
+        mv a0, a2   #returns the number of nodes
+        jalr x0, ra, 0
+    null:
+        addi a0, x0, -1
+        jalr x0, ra, 0
 
 
-
-
-
+.globl puts
 puts:   #when this function is called a0 has the adress
         #of the string to be printed
     mv t6, a0
@@ -42,6 +66,8 @@ puts:   #when this function is called a0 has the adress
     li a0, 0    #retorno de valor não negativo
     jalr x0, ra, 0
 
+
+.globl gets
 gets:   #when this function is called it will store
 #the characters at the address until \n is found
     mv t0, a0
@@ -70,10 +96,10 @@ gets:   #when this function is called it will store
         li t1, 0
         sb t1, 0(t0)
 
-
+    mv a0, t6
     jalr x0, ra, 0
 
-
+.globl atoi
 atoi:
     #a0 has the address
     addi t1, x0, 43 #ascii for '+'
@@ -148,7 +174,7 @@ atoi:
         mv a0, t3
     jalr x0, ra, 0
     
-
+.globl itoa
 itoa:
     #a0 = value
     #a1 = string address
@@ -319,7 +345,7 @@ itoa:
     mv a0, a3   #return the string pointer
     jalr x0, ra, 0
 
-
+.globl exit
 exit:
     addi a7, x0, 93
     ecall
