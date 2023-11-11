@@ -234,7 +234,7 @@ itoa:
             bnez a4, 2f #if printing begun
             beqz t3, 3f
             2:
-
+            addi a4, x0, 1
             addi t4, t3, 48
             sb t4, 0(a1)
             addi a1, a1, 1
@@ -248,9 +248,14 @@ itoa:
             sub t2, a0, t1
             div t3, t2, t0
 
+            bnez a4, 2f #if printing begun
+            beqz t3, 3f
+            2:
+            addi a4, x0, 1
             addi t4, t3, 48
             sb t4, 0(a1)
             addi a1, a1, 1
+            3:
             sub a0, a0, t2
 
 
@@ -259,6 +264,7 @@ itoa:
             remu t1, a0, t0
             sub t2, a0, t1
             div t3, t2, t0
+
 
             addi t4, t3, 48
             sb t4, 0(a1)
