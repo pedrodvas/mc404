@@ -45,9 +45,6 @@ dec_to_hex:
 
     2:
     */
-    addi a0, x0, -309
-    addi a1, x0, 0  #checks if printing has begun
-
 
 
 
