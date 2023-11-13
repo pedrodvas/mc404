@@ -64,6 +64,8 @@ algebra:
     li t2, 45
     bne t1, t2, 1f
     li t5, -1
+    j read_first_num    #if '-' is the char starts reading the next one
+                        #after storing that n<0
     1:
 
     addi t1, t1, -48
@@ -83,6 +85,16 @@ algebra:
     li t0, read_byte
     lb t1, 0(t0)
     mv a1, t1
+    
+    li t0, set_read
+    li t1, 1
+    sb t1, 0(t0)    #read = on
+    1:
+        lb t1, 0(t0)
+        bnez t1, 1b     #repeatedly reads until read=off
+    li t0, read_byte
+    lb t1, 0(t0)
+
 
     read_sec_num:
     li t0, set_read
@@ -101,6 +113,7 @@ algebra:
     li t2, 45
     bne t1, t2, 1f
     li t6, -1
+    j read_sec_num
     1:
 
     addi t1, t1, -48
@@ -109,9 +122,12 @@ algebra:
     add a2, a2, t1
     j read_sec_num
 
+    2:
+
     mul a0, a0, t5
     mul a2, a2, t6
     #corrects the sign
+    
 
     li t0, 43  #+
     li t1, 42  #*
@@ -137,6 +153,128 @@ algebra:
     j print_result
 
     print_result:
+
+
+    bge a0, x0, 2f  #checks if printing '-' is necessary
+    li t0, write_byte
+    li t1, 45
+    sb t1, 0(t0)
+    li t0, set_write
+    li t1, 1
+    sb t1, 0(t0)
+    1:
+        lb t1, 0(t0)
+        bnez t1, 1b
+
+    li t1, -1
+    mul a0, a0, t1
+    
+    2:
+
+    addi a1, x0, 0  #checks if printing has begun
+
+
+    li t0, 10000000
+    rem t1, a0, t0
+    sub t2, a0, t1
+    div t3, t2, t0
+    addi t3, t3, 48
+
+    sub a0, a0, t2
+
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
+
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
+
+
+    li t0, 1000000
+    rem t1, a0, t0
+    sub t2, a0, t1
+    div t3, t2, t0
+    addi t3, t3, 48
+
+    sub a0, a0, t2
+
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
+
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
+
+    li t0, 100000
+    rem t1, a0, t0
+    sub t2, a0, t1
+    div t3, t2, t0
+    addi t3, t3, 48
+
+    sub a0, a0, t2
+
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
+
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
+
+    li t0, 10000
+    rem t1, a0, t0
+    sub t2, a0, t1
+    div t3, t2, t0
+    addi t3, t3, 48
+
+    sub a0, a0, t2
+
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
+
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
+
     li t0, 1000
     rem t1, a0, t0
     sub t2, a0, t1
@@ -145,16 +283,23 @@ algebra:
 
     sub a0, a0, t2
 
-    li t0, write_byte
-    sb t3, 0(t0)
-    li t0, set_write
-    li t1, 1
-    sb t1, 0(t0)
-    1:
-        lb t1, 0(t0)
-        bnez t1, 1b
-    
-    
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
+
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
+
     li t0, 100
     rem t1, a0, t0
     sub t2, a0, t1
@@ -163,16 +308,22 @@ algebra:
 
     sub a0, a0, t2
 
-    li t0, write_byte
-    sb t3, 0(t0)
-    li t0, set_write
-    li t1, 1
-    sb t1, 0(t0)
-    1:
-        lb t1, 0(t0)
-        bnez t1, 1b
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
 
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
 
+    3:
 
     li t0, 10
     rem t1, a0, t0
@@ -182,15 +333,22 @@ algebra:
 
     sub a0, a0, t2
 
-    li t0, write_byte
-    sb t3, 0(t0)
-    li t0, set_write
-    li t1, 1
-    sb t1, 0(t0)
-    1:
-        lb t1, 0(t0)
-        bnez t1, 1b
-    
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
+
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
 
 
     li t0, 1
@@ -201,15 +359,22 @@ algebra:
 
     sub a0, a0, t2
 
-    li t0, write_byte
-    sb t3, 0(t0)
-    li t0, set_write
-    li t1, 1
-    sb t1, 0(t0)
-    1:
-        lb t1, 0(t0)
-        bnez t1, 1b
+    bne a1, x0, 2f  #if printing begun prints any number
+    li t4, 48
+    beq t3, t4, 3f  #otherwise if n = '0' skips
 
+        2:
+        addi a1, a1, 1
+        li t0, write_byte
+        sb t3, 0(t0)
+        li t0, set_write
+        li t1, 1
+        sb t1, 0(t0)
+        1:
+            lb t1, 0(t0)
+            bnez t1, 1b
+
+    3:
 
     li t1, 10
     li t0, write_byte
