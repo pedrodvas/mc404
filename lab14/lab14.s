@@ -29,7 +29,19 @@ int_handler:
     sw t5, 56(sp)
     sw t6, 60(sp)
 
-    #interrupt
+    csrr a0, mcause
+    li a1, 0x0fffffff
+    and a0, a0, a1
+
+    li t0, 10   #engine and steering wheel
+    li t1, 11   #brakes
+    li t2, 12   #luminosity
+    li t3, 15   #gps
+
+    0:  
+    1:
+    2:
+    3:
 
     lw t6, 60(sp)
     lw t5, 56(sp)
@@ -54,6 +66,12 @@ int_handler:
                     # the instruction that invoked the syscall)
     addi t0, t0, 4  # adds 4 to the return address (to return after ecall) 
     csrw mepc, t0   # stores the return address back on mepc
+
+    csrr t0, mstatus
+    ori t0, t0, 0x8     #re-enables interruptions
+    csrw mstatus, t0
+
+
     mret            # Recover remaining context (pc <- mepc)
   
 
@@ -64,6 +82,8 @@ _start:
     csrw mtvec, t0      # (and syscalls) on the register MTVEC to set
                         # the interrupt array.
 
+    jal user_main
+
 # Write here the code to change to user mode and call the function 
 # user_main (defined in another file). Remember to initialize
 # the user stack so that your program can use it.
@@ -71,7 +91,9 @@ _start:
 .globl control_logic
 control_logic:
     # implement your control logic here, using only the defined syscalls
-
+    li a0, 1
+    li a1, -15
+    jal Syscall_set_engine_and_steering
 
 #system calls located below
 Syscall_set_engine_and_steering:

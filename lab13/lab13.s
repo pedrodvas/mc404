@@ -126,7 +126,7 @@ gpt_interruption:
     sw t1, 0(t0)    #updates system time
 
     li t0, DELAY_INTERRUPT
-    li t1, 100
+    li t1, 400
     sw t1, 0(t0)    #next interrupt on 100ms
 
     jalr x0, ra, 0
