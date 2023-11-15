@@ -1,47 +1,42 @@
 .data
+.text
 .globl _system_time
 _system_time: .word 0
-.bss
-.section .bss
-.align 4
-
-.globl isr_stack_begin
-isr_stack_begin: # Final da pilha das ISRs
-.skip 1024 # Aloca 1024 bytes para a pilha
-.globl isr_stack_end
-isr_stack_end: # Base da pilha das ISRs
-.section .text
-.align 2
-
-
-.text
 #general purpose timer (GPT), stores time in miiseconds
-.set BASE_GPT,        0xffff0100  #1-> starts reading the current system time
+.set BASE_GPT,        0xFFFF0100  #1-> starts reading the current system time
                                   #0-> the time reading is complete
-.set LAST_READING,    0xffff0104  #stores the last reading
-.set DELAY_INTERRUPT  0xffff0108  #v>0 creates interrupt after v mili
+.set LAST_READING,    0xFFFF0104  #stores the last reading
+.set DELAY_INTERRUPT,  0xFFFF0108  #v>0 creates interrupt after v mili
 
 #MIDI synthesizer
-.set BASE_MIDI,      0xffff0300, if value>=0 than channel[value] plays midi note
-.set INSTRUMENT_ID,  0xffff0302 
-.set NOTE,           0xffff0304
-.set NOTE_VELOCITY,  0xffff0305
-.set NOTE_DURATION,  0xffff0306
+.set BASE_MIDI,      0xFFFF0300 #if value>=0 than channel[value] plays midi note
+.set INSTRUMENT_ID,  0xFFFF0302 
+.set NOTE,           0xFFFF0304
+.set NOTE_VELOCITY,  0xFFFF0305
+.set NOTE_DURATION,  0xFFFF0306
 
 
 .globl _start
 _start:
+    la t0, interrupt_handler
+    csrw mtvec, t0
+
+    jal gpt_interruption    #sets up the first interrupt
+
+    # Configura mscratch com o topo da pilha das ISRs.
+    la t0, isr_stack_end # t0 <= base da pilha
+    csrw mscratch, t0 # mscratch <= t0
+
     #habilitando interrupção externa
     csrr t1, mie # Seta o bit 11 (MEIE)
     li t2, 0x800 # do registrador mie
     or t1, t1, t2
     csrw mie, t1
 
-
-
-    # Configura mscratch com o topo da pilha das ISRs.
-    la t0, isr_stack_end # t0 <= base da pilha
-    csrw mscratch, t0 # mscratch <= t0
+    #interrupção global
+    csrr t1, mstatus
+    ori t1, t1, 0x8
+    csrw mstatus, t1
 
     jal main
 
@@ -52,13 +47,13 @@ play_note:
     li t0, BASE_MIDI
     sb a0, 0(t0)
     li t0, INSTRUMENT_ID
-    sb a1, 0(t0)
+    sh a1, 0(t0)
     li t0, NOTE
     sb a2, 0(t0)
     li t0, NOTE_VELOCITY
     sb a3, 0(t0)
     li t0, NOTE_DURATION
-    sb a4, 0(t0)
+    sh a4, 0(t0)
 
     jalr x0, ra, 0
 
@@ -100,30 +95,34 @@ interrupt_handler:
     lw a2, 8(sp)
     lw a1, 4(sp)
     lw a0, 0(sp)
-    csrrw sp, mscratch, sp
 
-
+    addi sp, sp, 64
+    /*
     csrr t0, mepc   # load return address (address of 
                     # the instruction that invoked the syscall)
     addi t0, t0, 4  # adds 4 to the return address (to return after ecall) 
     csrw mepc, t0   # stores the return address back on mepc
     mret            # Recover remaining context (pc <- mepc)
+    */
+    csrrw sp, mscratch, sp
+    mret
 
 gpt_interruption:
 
     li t0, BASE_GPT
     li t1, 1
-    sw t1, 0(t0)
+    sb t1, 0(t0)
     #starts reading
     1:
-        lw t1, 0(t0)
-        bne t1, x0, 1b
+        lb t1, 0(t0)
+        beq t1, x0, done
+        j 1b
     #loops until reading is done
-
+    done:
     li t0, LAST_READING
     lw t1, 0(t0)
 
-    la _system_time
+    la t0, _system_time
     sw t1, 0(t0)    #updates system time
 
     li t0, DELAY_INTERRUPT
@@ -131,3 +130,9 @@ gpt_interruption:
     sw t1, 0(t0)    #next interrupt on 100ms
 
     jalr x0, ra, 0
+
+.bss
+.align 4
+isr_stack: # Final da pilha das ISRs
+.skip 1024 # Aloca 1024 bytes para a pilha
+isr_stack_end: # Base da pilha das ISRs
