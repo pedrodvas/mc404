@@ -1,9 +1,4 @@
 .data
-interrupt_table:
-.word Syscall_set_engine_and_steering   #EXCCODE = 0
-.word Syscall_set_handbrake             #1
-.word Syscall_read_sensors              #2
-.word Syscall_get_position              #3
 .bss
 pos_x: .skip 1
 pos_y: .skip 1
