@@ -2,6 +2,8 @@
 buffer_puts: .skip 1
 .text
 
+
+.globl set_engine
 set_engine:
     #a0 movement direction //vertical
     #a1 movement angle //horizontal
@@ -9,6 +11,8 @@ set_engine:
     ecall
     jalr x0, ra, 0
 
+
+.globl set_handbrake
 set_handbrake:
     #a0 condition if brake will be activated
     #1 yes and 0 no // value
@@ -28,26 +32,36 @@ set_handbrake:
     li a0, -1   #error occurred
     jalr x0, ra, 0
 
+
+.globl read_sensor_distance
 read_sensor_distance:
     li a7, 13
     ecall
     jalr x0, ra, 0
 
+
+.globl get_position
 get_position:
     li a7, 15
     ecall
     jalr x0, ra, 0
 
+
+.globl get_rotation
 get_rotation:
     li a7, 16
     ecall
     jalr x0, ra, 0
 
+
+.globl get_time
 get_time:
     li a7, 20
     ecall
     jalr x0, ra, 0
 
+
+.globl puts
 puts:   #when this function is called a0 has the adress
         #of the string to be printed
     loop_chari: #will iterate until it finds a \0
@@ -75,6 +89,8 @@ puts:   #when this function is called a0 has the adress
     li a0, 0    #retorno de valor não negativo
     jalr x0, ra, 0
 
+
+.globl gets
 gets:   #when this function is called it will store
 #the characters at the address until \n is found
     mv t6, a0
@@ -102,6 +118,8 @@ gets:   #when this function is called it will store
     mv a0, t6
     jalr x0, ra, 0
 
+
+.globl atoi
 atoi:
     #a0 has the address
     addi t1, x0, 43 #ascii for '+'
@@ -177,6 +195,8 @@ atoi:
     
     jalr x0, ra, 0
 
+
+.globl itoa
 itoa:
     #a0 = value
     #a1 = string address
@@ -366,6 +386,8 @@ itoa:
     mv a0, a3   #return the string pointer
     jalr x0, ra, 0
 
+
+.globl strlen_custom
 strlen_custom:
     #a0 address for string
     #returns int size of string
@@ -381,6 +403,8 @@ strlen_custom:
     mv a0, t0
     jalr x0, ra, 0
 
+
+.globl approx_sqrt
 approx_sqrt:
     #a0 value
     #a1 number of iterations
@@ -401,6 +425,8 @@ approx_sqrt:
     mv a0, t0
     jalr x0, ra, 0
 
+
+.globl get_distance
 get_distance:
     #a0 start x
     #a1 start y
@@ -434,6 +460,7 @@ get_distance:
     #returns the distance after square root is used
     jalr x0, ra, 0
 
+.globl fill_and_pop
 fill_and_pop:
     #a0 head node address
     #a1 fill node address
