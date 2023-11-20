@@ -446,11 +446,22 @@ fill_and_pop:
     lw t3, 12(a0)
     lw t4, 16(a0)
     lw t5, 20(a0)
+    lw t6, 24(a0)
 
 
     sw t0, 0(a1)
     sw t1, 4(a1)
     sw t2, 8(a1)
-    sw t3, 12(a0)
-    sw t4, 16(a0)
-    sw t5, 20(a0)
+    sw t3, 12(a1)
+    sw t4, 16(a1)
+    sw t5, 20(a1)
+    sw t6, 24(a1)
+
+    #copies until Action action
+
+    lw t0, 28(a0)
+    sw t0, 28(a1)
+    #Node* next copied
+
+    lw a0, 28(a0) #a0 = a0->next
+    jalr x0, ra, 0
