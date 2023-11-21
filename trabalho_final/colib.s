@@ -1,8 +1,11 @@
+.data
+enter: .asciz "\n"
 .bss
 buffer_puts: .skip 1
+.align 4
 .text
-
-
+.globl stop
+stop:
 .globl set_engine
 set_engine:
     #a0 movement direction //vertical
@@ -62,47 +65,53 @@ get_time:
 
 
 .globl puts
-puts:   #when this function is called a0 has the adress
-        #of the string to be printed
-    loop_chari: #will iterate until it finds a \0
-        lbu t0, 0(a0)   #loads first char in t0
-        beq t0, x0, string_ends #if t0=0 -> string ended
-        
-        #a0 already has address of char
-        li a1, 1    #prints 1 char at a time
-        li a7, 18
-        ecall
+puts:
+    #a0 has the address of null terminated string
+    #a \n string must be printed
+    mv t0, a0
+    loop_chari:
+        lbu t1, 0(t0)
+        beq t1, x0, null_found
+        addi t0, t0, 1
+        j loop_chari
 
-        #end of print
-        addi a0, a0, 1
-        bne t0, x0, loop_chari
+    null_found:
 
-    string_ends:
-        li t0, 10
-        la a0, buffer_puts
-        sb t0, 0(a0)   #has the address of \n
-                #to be used on write syscall
-        li a1, 1
-        li a7, 18 
-        ecall
-        #end of print
-    li a0, 0    #retorno de valor não negativo
+    sub t0, t0, a0
+    #t0 has the number of chars
+    mv a1, t0
+    li a7, 18
+    ecall
+
+    la a0, enter
+    li a1, 1
+    li a7, 18  #redundance to be clear
+    ecall
+
+    li a0, 0
     jalr x0, ra, 0
 
 
 .globl gets
+/*
 gets:   #when this function is called it will store
 #the characters at the address until \n is found
     mv t6, a0
 
     loop_read:
+        addi sp, sp, -4
+        sw a0, 0(sp)
         #a0 already has the address
         li a1, 1
         li a7, 17
         ecall   #stores the read byte on a0
 
-        lb t1, 0(a0)    #loads the stored byte
+        lw a0, 0(sp)
+        addi sp, sp, 4
+
+        lbu t1, 0(a0)    #loads the stored byte
         
+        debug_gets:
         addi t3, x0, 10 #t3='\n'
         beq t1, t3, ignore_enter #if char='\n' ends string
 
@@ -117,7 +126,22 @@ gets:   #when this function is called it will store
 
     mv a0, t6
     jalr x0, ra, 0
-
+*/
+gets:   #when this function is called it will store
+#the characters at the address until \n is found
+    addi sp, sp, -4
+    sw ra, 0(sp)
+    mv t6, a0
+    loop_read:
+        #a0 already has the address
+        li a1, 100
+        li a7, 17
+        ecall   #stores the read byte on a0
+    
+    mv a0, t6
+    lw ra, 0(sp)
+    addi sp, sp, 4
+    jalr x0, ra, 0
 
 .globl atoi
 atoi:
@@ -192,7 +216,7 @@ atoi:
     5:  #end of the function
         mul t3, t3, a1  #abs value * signal
         mv a0, t3
-    
+    debug_atoi:
     jalr x0, ra, 0
 
 
@@ -218,8 +242,8 @@ itoa:
         blt a0, x0, negative
 
         negative:
-            addi a1, x0, -1 #*-1 if negative
-            mul a0, a0, a1  #makes a0 positive
+            addi t1, x0, -1 #*-1 if negative
+            mul a0, a0, t1  #makes a0 positive
             addi t0, x0, 45 #ascii for '-'
             sb t0, 0(a1)    #char[0] = '-'
             addi a1, a1, 1 
@@ -298,91 +322,168 @@ itoa:
 
 
     hexadecimal:
-        addi t0, x0, 1
-        slli t0, t0, 12 #4096=0x1000 
+        li t5, 0    #check if printing has begun
+        li t6, 10
 
-        remu t1, a0, t0
-        sub t2, a0, t1
-        div t3, t2, t0
-        #t3 has digit
-        addi t4, x0, 10
-        blt t3, t4, 1f
-        bge t3, t4, 2f
 
-        1: #for d<10
-        addi t5, t3, 48
-        beq x0, x0, 3f
-
-        2: #for d>10
-        addi t5, t3, 87
-        beq x0, x0, 3f
-
+        li t0, 0xf0000000
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
         3:
-        sb t5, 0(a1)
+        srai t2, t1, 28 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
         addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
 
 
-        srai t0, t0, 4
-
-        remu t1, a0, t0
-        sub t2, a0, t1
-        div t3, t2, t0
-        addi t4, x0, 10
-        blt t3, t4, 1f
-        bge t3, t4, 2f
-
-        1: #for d<10
-        addi t5, t3, 48
-        beq x0, x0, 3f
-        2: #for d>10
-        addi t5, t3, 87
-        beq x0, x0, 3f
-
+        li t0, 0xf000000
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
         3:
-        sb t5, 0(a1)
+        srai t2, t1, 24 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
         addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
 
 
-        srai t0, t0, 4
-
-        remu t1, a0, t0
-        sub t2, a0, t1
-        div t3, t2, t0
-        addi t4, x0, 10
-        blt t3, t4, 1f
-        bge t3, t4, 2f
-
-        1: #for d<10
-        addi t5, t3, 48
-        beq x0, x0, 3f
-        2: #for d>10
-        addi t5, t3, 87
-        beq x0, x0, 3f
-
+        li t0, 0xf00000
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
         3:
-        sb t5, 0(a1)
+        srai t2, t1, 20 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
         addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
 
-        srai t0, t0, 4
 
-        remu t1, a0, t0
-        sub t2, a0, t1
-        div t3, t2, t0
-        addi t4, x0, 10
-        blt t3, t4, 1f
-        bge t3, t4, 2f
-
-        1: #for d<10
-        addi t5, t3, 48
-        beq x0, x0, 3f
-        2: #for d>10
-        addi t5, t3, 87
-        beq x0, x0, 3f
-
+        li t0, 0xf0000
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
         3:
-        sb t5, 0(a1)
+        srai t2, t1, 16 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
         addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
 
+
+        li t0, 0xf000
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
+        3:
+        srai t2, t1, 12 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
+        addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
+
+
+        li t0, 0xf00
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
+        3:
+        srai t2, t1, 8 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
+        addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
+
+
+        li t0, 0xf0
+        and t1, a0, t0  #isolates the first digit
+        bne t5, x0, 3f  #if storing begun
+        #stores even if value is 0
+            beq t1, x0, 6f
+        3:
+        srai t2, t1, 4 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
+        addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
+
+
+        li t0, 0xf
+        and t1, a0, t0  #isolates the first digit
+        srai t2, t1, 0 #corrects its value
+        blt t2, t6, 4f  #checks if [0,9] or [10,15]
+        addi t3, t2, 87
+        j 5f
+        4:
+        addi t3, t2, 48
+        5:
+        sb t3, 0(a1)
+        addi a1, a1, 1
+        addi t5, t5, 1
+        sub a0, a0, t1
+        6:
+
+    li t3, 0
+    sb t3, 0(a1)
+    debug_itoa:
     mv a0, a3   #return the string pointer
     jalr x0, ra, 0
 
@@ -398,8 +499,10 @@ strlen_custom:
         #_if not null
 
         addi t0, t0, 1  #n_chars++
-        addi a0, a0, 1  #next mem pos    
+        addi a0, a0, 1  #next mem pos
+        j 4b
     5:
+    debug_strlen:
     mv a0, t0
     jalr x0, ra, 0
 
@@ -413,13 +516,14 @@ approx_sqrt:
     srai t0, a0, 1  #value/2
 
     1:
-    bne a1, x0, 2f
+    beq a1, x0, 2f
 
     divu t1, a0, t0 #t1 = value/(guessN)
     add t2, t1, t0 #t2 = t1 + (guessN) = value/(guessN) + guessN
     srai t0, t2, 1 #guessN+1 = t2/2 = (value/(guessN)+guessN)/2
 
     addi a1, a1, -1 #1 less iteration left
+    j 1b
     2:
 
     mv a0, t0

@@ -30,7 +30,7 @@ isr_stack_end: # Base da pilha das ISRs
 .set WRITE_BYTE,      0xFFFF0501  #stores char to write
 .set SET_READ,        0xFFFF0502  #=1 reads, 0 complete
 .set READ_BYTE,       0xFFFF0503  #stores char read
-
+.align 4
 
 .globl _start
 _start:
@@ -55,11 +55,9 @@ _start:
     li t2, ~0x1800 # field (bits 11 and 12)
     and t1, t1, t2 # with value 00 (U-mode)
     csrw mstatus, t1
-    la t0, main # Loads the user software
-    csrw mepc, t0 # entry point into mepc
-    mret # PC <= MEPC; mode <= MPP;
 
     jal main
+
 
 int_handler:
     ###### Syscall and Interrupts handler ######
@@ -101,7 +99,7 @@ int_handler:
     li t0, 20
     beq t0, a7, 9f    
 
-
+    j end_syscalls
 
     1:
         jal Syscall_set_engine_and_steering
@@ -167,8 +165,11 @@ int_handler:
     lw a3, 8(sp)
     lw a2, 4(sp)
     lw a1, 0(sp)
+    addi sp, sp, 60
     csrrw sp, mscratch, sp
 
+
+    interruption_end:
 
     csrr t0, mepc   # load return address (address of 
                     # the instruction that invoked the syscall)
@@ -307,15 +308,18 @@ Syscall_get_rotation:
 
     jalr x0, ra, 0
 
+
 Syscall_read_serial:
     #a0 buffer address
     #a1 size = characters to be read
     beq a1, x0, 5f
     addi a2, x0, 0
     4:
+        debug_char_read:
         li t0, SET_READ
         li t1, 1
         sb t1, 0(t0)
+        debug_read_serial:
         1:
             lb t1, 0(t0)
             bne t1, x0, 1b
@@ -333,15 +337,13 @@ Syscall_read_serial:
         addi a0, a0, 1  #next pos of buffer
         addi a2, a2, 1  #increases the number of chars read
 
-        beq t1, x0, 5f  #if null is read the function ends
-        li t2, 10
-        beq t1, t2, 5f  #same for \n
-
         blt a2, a1, 4b  #if chars_read < size
         #then continues reading
         #otherwise the function ends
 
     5:
+    li t1, 0
+    sb t1, 0(a0)    #terminates string in \0
     addi a0, a2, 0  #stores the number of chars read on return
     jalr x0, ra, 0
 
