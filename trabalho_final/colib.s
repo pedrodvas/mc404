@@ -4,8 +4,6 @@ enter: .asciz "\n"
 buffer_puts: .skip 1
 .align 4
 .text
-.globl stop
-stop:
 .globl set_engine
 set_engine:
     #a0 movement direction //vertical
@@ -67,7 +65,7 @@ get_time:
 .globl puts
 puts:
     #a0 has the address of null terminated string
-    #a \n string must be printed
+    #a \n terminated string must be printed
     mv t0, a0
     loop_chari:
         lbu t1, 0(t0)
@@ -93,40 +91,6 @@ puts:
 
 
 .globl gets
-/*
-gets:   #when this function is called it will store
-#the characters at the address until \n is found
-    mv t6, a0
-
-    loop_read:
-        addi sp, sp, -4
-        sw a0, 0(sp)
-        #a0 already has the address
-        li a1, 1
-        li a7, 17
-        ecall   #stores the read byte on a0
-
-        lw a0, 0(sp)
-        addi sp, sp, 4
-
-        lbu t1, 0(a0)    #loads the stored byte
-        
-        debug_gets:
-        addi t3, x0, 10 #t3='\n'
-        beq t1, t3, ignore_enter #if char='\n' ends string
-
-
-        addi a0, a0, 1  #moves the memory position
-
-        j loop_read
-
-    ignore_enter:
-        li t1, 0
-        sb t1, 0(a0)
-
-    mv a0, t6
-    jalr x0, ra, 0
-*/
 gets:   #when this function is called it will store
 #the characters at the address until \n is found
     addi sp, sp, -4
@@ -134,7 +98,7 @@ gets:   #when this function is called it will store
     mv t6, a0
     loop_read:
         #a0 already has the address
-        li a1, 100
+        li a1, 100  #reads 100 bytes at max
         li a7, 17
         ecall   #stores the read byte on a0
     
@@ -142,6 +106,7 @@ gets:   #when this function is called it will store
     lw ra, 0(sp)
     addi sp, sp, 4
     jalr x0, ra, 0
+
 
 .globl atoi
 atoi:
@@ -216,7 +181,6 @@ atoi:
     5:  #end of the function
         mul t3, t3, a1  #abs value * signal
         mv a0, t3
-    debug_atoi:
     jalr x0, ra, 0
 
 
@@ -483,7 +447,6 @@ itoa:
 
     li t3, 0
     sb t3, 0(a1)
-    debug_itoa:
     mv a0, a3   #return the string pointer
     jalr x0, ra, 0
 
@@ -502,7 +465,6 @@ strlen_custom:
         addi a0, a0, 1  #next mem pos
         j 4b
     5:
-    debug_strlen:
     mv a0, t0
     jalr x0, ra, 0
 

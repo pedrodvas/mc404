@@ -168,9 +168,6 @@ int_handler:
     addi sp, sp, 60
     csrrw sp, mscratch, sp
 
-
-    interruption_end:
-
     csrr t0, mepc   # load return address (address of 
                     # the instruction that invoked the syscall)
     addi t0, t0, 4  # adds 4 to the return address (to return after ecall) 
@@ -179,7 +176,6 @@ int_handler:
     csrr t0, mstatus
     ori t0, t0, 0x8     #re-enables interruptions
     csrw mstatus, t0
-
 
     mret            # Recover remaining context (pc <- mepc)
 
@@ -315,11 +311,9 @@ Syscall_read_serial:
     beq a1, x0, 5f
     addi a2, x0, 0
     4:
-        debug_char_read:
         li t0, SET_READ
         li t1, 1
         sb t1, 0(t0)
-        debug_read_serial:
         1:
             lb t1, 0(t0)
             bne t1, x0, 1b
