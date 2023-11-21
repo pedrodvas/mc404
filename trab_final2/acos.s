@@ -34,28 +34,34 @@ isr_stack_end: # Base da pilha das ISRs
 
 .globl _start
 _start:
-    la t0, isr_stack_end # t0 <= base da pilha
-    csrw mscratch, t0 # mscratch <= t0
+    li sp, 0x07FFFFFC
 
-    la t0, int_handler # Carrega o endereço da main_isr
-    csrw mtvec, t0 # em mtvec
 
-    # Habilita Interrupções Externas
-    csrr t1, mie # Seta o bit 11 (MEIE)
-    li t2, 0x800 # do registrador mie
+    la a0, isr_stack_end
+    csrw mscratch, a0
+
+    # Allow external interruptions
+    csrr t1, mie # Set bit 11 (MEIE)
+    li t2, 0x800
     or t1, t1, t2
     csrw mie, t1
 
-    # Habilita Interrupções Global
-    csrr t1, mstatus # Seta o bit 3 (MIE)
-    ori t1, t1, 0x8 # do registrador mstatus
+    # Allow global interruptions
+    csrr t1, mstatus # Set bit 3 (MIE)
+    ori t1, t1, 0x8
     csrw mstatus, t1
 
+    la a0, int_handler 
+    csrw mtvec, a0      
 
-    jal set_user_mode
+    # Change to user mode
+    jal user_main
     jal main
-    jalr x0, ra, 0
-    /*
+
+    ret
+
+
+user_main:
     csrr t1, mstatus # Update the mstatus.MPP
     li t2, ~0x1800 # field (bits 11 and 12)
     and t1, t1, t2 # with value 00 (U-mode)
@@ -63,24 +69,7 @@ _start:
     la t0, main # Loads the user software
     csrw mepc, t0 # entry point into mepc
     mret # PC <= MEPC; mode <= MPP;
-    */
 
-    /*
-    csrr t1, mstatus # Update the mstatus.MPP
-    li t2, ~0x1800 # field (bits 11 and 12)
-    and t1, t1, t2 # with value 00 (U-mode)
-    csrw mstatus, t1
-
-    jal main
-    */
-set_user_mode:
-    csrr t1, mstatus # Update the mstatus.MPP
-    li t2, ~0x1800 # field (bits 11 and 12)
-    and t1, t1, t2 # with value 00 (U-mode)
-    csrw mstatus, t1
-    la t0, main # Loads the user software
-    csrw mepc, t0 # entry point into mepc
-    mret # PC <= MEPC; mode <= MPP;
 int_handler:
     ###### Syscall and Interrupts handler ######
 
@@ -190,16 +179,18 @@ int_handler:
     addi sp, sp, 60
     csrrw sp, mscratch, sp
 
+
+    interruption_end:
+
     csrr t0, mepc   # load return address (address of 
                     # the instruction that invoked the syscall)
     addi t0, t0, 4  # adds 4 to the return address (to return after ecall) 
     csrw mepc, t0   # stores the return address back on mepc
 
-    /*
     csrr t0, mstatus
     ori t0, t0, 0x8     #re-enables interruptions
-    */
     csrw mstatus, t0
+
 
     mret            # Recover remaining context (pc <- mepc)
 
@@ -335,9 +326,11 @@ Syscall_read_serial:
     beq a1, x0, 5f
     addi a2, x0, 0
     4:
+        debug_char_read:
         li t0, SET_READ
         li t1, 1
         sb t1, 0(t0)
+        debug_read_serial:
         1:
             lb t1, 0(t0)
             bne t1, x0, 1b

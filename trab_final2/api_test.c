@@ -110,6 +110,8 @@ int main(){
     while(1);
     return 0;
     */
-    buffer[0] = 'a';
-    buffer[1] = '\0';
+   buffer[0] = 'a';
+   buffer[1] = '\0';
+   puts(buffer);
+   return 0;
 }  
