@@ -36,25 +36,21 @@ isr_stack_end: # Base da pilha das ISRs
 _start:
     li sp, 0x07FFFFFC
 
-
     la a0, isr_stack_end
     csrw mscratch, a0
 
-    # Allow external interruptions
-    csrr t1, mie # Set bit 11 (MEIE)
+    csrr t1, mie
     li t2, 0x800
     or t1, t1, t2
     csrw mie, t1
 
-    # Allow global interruptions
-    csrr t1, mstatus # Set bit 3 (MIE)
+    csrr t1, mstatus
     ori t1, t1, 0x8
     csrw mstatus, t1
 
-    la a0, int_handler 
-    csrw mtvec, a0      
+    la a0, int_handler
+    csrw mtvec, a0
 
-    # Change to user mode
     jal user_main
     jal main
 
@@ -62,13 +58,13 @@ _start:
 
 
 user_main:
-    csrr t1, mstatus # Update the mstatus.MPP
-    li t2, ~0x1800 # field (bits 11 and 12)
-    and t1, t1, t2 # with value 00 (U-mode)
+    csrr t1, mstatus
+    li t2, ~0x1800
+    and t1, t1, t2
     csrw mstatus, t1
-    la t0, main # Loads the user software
-    csrw mepc, t0 # entry point into mepc
-    mret # PC <= MEPC; mode <= MPP;
+    la t0, main
+    csrw mepc, t0
+    mret
 
 int_handler:
     ###### Syscall and Interrupts handler ######
